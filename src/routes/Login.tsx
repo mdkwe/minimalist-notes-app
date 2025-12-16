@@ -38,17 +38,11 @@ export default function Login() {
   return (
     <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        {/* Logo / App name */}
-        <h1>
-          Minimalist Notes
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Start capturing your ideas in a clean and minimalist space.
-        </p>
 
-        <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
-          Sign in
-        </h2>
+        <h1 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
+         Login
+        </h1>
+        <p>Enter your email below to login to your account</p>
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
@@ -59,13 +53,14 @@ export default function Login() {
               htmlFor="email"
               className="block text-sm font-medium text-gray-900"
             >
-              Email address
+              Email
             </label>
             <div className="mt-2">
               <input
                 id="email"
                 type="email"
                 autoComplete="email"
+                placeholder="m@example.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -94,6 +89,14 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="block w-full rounded-md bg-white px-3 py-1.5 text-gray-900 outline outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
               />
+            </div>
+            <div className="text-sm">
+              <Link
+                to="/forgot-password"
+                className="font-semibold text-indigo-600 hover:text-indigo-500"
+              >
+                Forgot password?
+              </Link>
             </div>
           </div>
 

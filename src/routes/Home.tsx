@@ -5,9 +5,14 @@ export default function Home() {
             <div className="flex min-h-screen flex-col">
                   {/* Header */}
                   <header className="bg-violet-600 px-6 py-4">
-                        <h1 className="text-center text-xl font-semibold text-white">
-                              Minimalist Notes App
+
+                        {/* Logo / App name */}
+                        <h1>
+                              Minimalist Notes
                         </h1>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                              Start capturing your ideas in a clean and minimalist space.
+                        </p>
                   </header>
 
                   {/* Main */}

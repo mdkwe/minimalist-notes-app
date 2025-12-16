@@ -7,6 +7,10 @@ import Register from './routes/Register';
 import Login from './routes/Login';
 import Dashboard from './routes/Dashboard';
 import Wrapper from './routes/Wrapper';
+import ForgotPassword from './routes/Forgot-password';
+import UpdatePassword from "./routes/UpdatePassword";
+
+
 
 
 export default function App() {
@@ -21,6 +25,12 @@ export default function App() {
 
         {/* login */}
         <Route path="/login" element={<Login />} />
+
+        {/* forgot password */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* update password */}
+        <Route path="/update-password" element={<UpdatePassword />} />
 
         {/* dashboard */}
         <Route path="/dashboard" element={
