@@ -12,7 +12,9 @@ export default function ForgotPassword() {
     setMessage(null);
     setLoading(true);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/update-password`,
+    });
 
     setLoading(false);
 
@@ -23,7 +25,6 @@ export default function ForgotPassword() {
 
     setMessage("Password reset email sent! Check your inbox.");
   };
-
   return (
     <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
@@ -63,8 +64,8 @@ export default function ForgotPassword() {
           <button
             type="submit"
             disabled={loading || !email}
-             className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-indigo-500 disabled:opacity-50"
-            >
+            className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-indigo-500 disabled:opacity-50"
+          >
             {loading ? "Sending..." : "Send reset email"}
           </button>
         </form>
