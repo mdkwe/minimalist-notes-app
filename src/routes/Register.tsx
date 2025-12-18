@@ -1,128 +1,160 @@
-import React, { useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-import { Link } from "react-router-dom";
+import { useState } from "react"
+import { Link } from "react-router-dom"
+import { supabase } from "../lib/supabaseClient"
 
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function Register() {
-      const [email, setEmail] = useState("");
-      const [password, setPassword] = useState("");
-      const [message, setMessage] = useState("");
-      const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
 
-      const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-            e.preventDefault();
-            setMessage("");
-            setLoading(true);
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
-            const { data, error } = await supabase.auth.signUp({
-                  email,
-                  password,
-            });
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
 
-            setLoading(false);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.")
+      return
+    }
 
-            if (error) {
-                  setMessage(error.message);
-                  return;
-            }
+    setLoading(true)
 
-            // If email confirmation is enabled, user may be null
-            if (data.user) {
-                  setMessage("Registration successful!");
-            } else {
-                  setMessage("Check your email for a confirmation link.");
-            }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    })
 
-            setEmail("");
-            setPassword("");
+    setLoading(false)
 
+    if (error) {
+      setError(error.message)
+      return
+    }
 
-      };
+    // If email confirmation is enabled, user can be null
+    if (data.user) {
+      setSuccess("Registration successful! You can now login.")
+    } else {
+      setSuccess("Check your email for a confirmation link.")
+    }
 
-      return (
-            <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-                  <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+    setEmail("")
+    setPassword("")
+    setConfirmPassword("")
+  }
 
-                        <h1 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
-                              Sign up
-                        </h1>
-                        <p>Create a new account</p>
-                  </div>
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto flex w-full max-w-md flex-col px-4 py-10 sm:px-6">
+        <div className="mb-6 space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Sign up</h1>
+          <p className="text-sm text-muted-foreground">
+            Create a new account to start saving your notes.
+          </p>
+        </div>
 
-                  <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                              {/* Email */}
-                              <div>
-                                    <label
-                                          htmlFor="email"
-                                          className="block text-sm font-medium text-gray-900"
-                                    >
-                                          Email address
-                                    </label>
-                                    <div className="mt-2">
-                                          <input
-                                                id="email"
-                                                type="email"
-                                                autoComplete="email"
-                                                required
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                className="block w-full rounded-md bg-white px-3 py-1.5 text-gray-900 outline outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
-                                          />
-                                    </div>
-                              </div>
+        <Card className="shadow-sm">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-base">Create your account</CardTitle>
+            <CardDescription>Minimal setup, maximum clarity.</CardDescription>
+          </CardHeader>
 
-                              {/* Password */}
-                              <div>
-                                    <div className="flex items-center justify-between">
-                                          <label
-                                                htmlFor="password"
-                                                className="block text-sm font-medium text-gray-900"
-                                          >
-                                                Password
-                                          </label>
-                                    </div>
-                                    <div className="mt-2">
-                                          <input
-                                                id="password"
-                                                type="password"
-                                                autoComplete="current-password"
-                                                required
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                className="block w-full rounded-md bg-white px-3 py-1.5 text-gray-900 outline outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
-                                          />
-                                    </div>
-                              </div>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
 
-                              {/* Error */}
-                              {message && (
-                                    <p className="text-sm text-red-600">{message}</p>
-                              )}
+              {/* Password */}
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Use at least 6 characters (recommended).
+                </p>
+              </div>
 
-                              {/* Submit */}
-                              <div>
-                                    <button
-                                          type="submit"
-                                          disabled={loading}
-                                          className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-indigo-500 disabled:opacity-50"
-                                    >
-                                          {loading ? "Registering..." : "Sign up"}
-                                    </button>
-                              </div>
-                        </form>
+              {/* Confirm password */}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
 
-                        {/* Footer */}
-                        <p className="mt-10 text-center text-sm text-gray-500">
-                              Already have an account?{" "}
-                              <Link
-                                    to="/login"
-                                    className="font-semibold text-indigo-600 hover:text-indigo-500"
-                              >
-                                    Login
-                              </Link>
-                        </p>
-                  </div>
-            </div>
-      );
+              {/* Alerts */}
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {success && (
+                <Alert>
+                  <AlertDescription>{success}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Submit */}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Creating account..." : "Create account"}
+              </Button>
+
+              {/* Footer */}
+              <p className="pt-2 text-center text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  Login
+                </Link>
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+
+        <div className="mt-6 text-center">
+          <Link
+            to="/"
+            className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Back to home
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
 }

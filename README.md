@@ -36,7 +36,7 @@ This project focuses on learning how to:
 - **Vite** — fast development server & build tool
 - **React** — UI and state management
 - **TypeScript** — type safety and scalability
-- **Tailwind CSS** — utility-first styling
+- **Tailwind CSS** & **shadcn/ui** — utility-first styling
 
 ### Backend / Database
 

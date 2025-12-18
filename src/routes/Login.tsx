@@ -1,133 +1,137 @@
-import { useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { supabase } from "../lib/supabaseClient"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function Login() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [message, setMessage] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setMessage(null);
-    setLoading(true);
+    e.preventDefault()
+    setMessage(null)
+    setLoading(true)
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    });
+    })
 
-    setLoading(false);
+    setLoading(false)
 
     if (error) {
-      setMessage(error.message);
-      return;
+      setMessage(error.message)
+      return
     }
 
     if (!data.user) {
-      setMessage("Login failed. Please try again.");
-      return;
+      setMessage("Login failed. Please try again.")
+      return
     }
 
-    navigate("/dashboard");
-  };
+    navigate("/dashboard")
+  }
 
   return (
-    <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto flex w-full max-w-md flex-col px-4 py-10 sm:px-6">
+        <div className="mb-6 space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Login</h1>
+          <p className="text-sm text-muted-foreground">
+            Enter your email below to login to your account.
+          </p>
+        </div>
 
-        <h1 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
-         Login
-        </h1>
-        <p>Enter your email below to login to your account</p>
-      </div>
+        <Card className="shadow-sm">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-base">Welcome back</CardTitle>
+            <CardDescription>Continue where you left off.</CardDescription>
+          </CardHeader>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Email */}
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-900"
-            >
-              Email
-            </label>
-            <div className="mt-2">
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="m@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-gray-900 outline outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
-              />
-            </div>
-          </div>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
 
-          {/* Password */}
-          <div>
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-900"
-              >
-                Password
-              </label>
-            </div>
-            <div className="mt-2">
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-gray-900 outline outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:outline-indigo-600 sm:text-sm"
-              />
-            </div>
-            <div className="text-sm">
-              <Link
-                to="/forgot-password"
-                className="font-semibold text-indigo-600 hover:text-indigo-500"
-              >
-                Forgot password?
-              </Link>
-            </div>
-          </div>
+              {/* Password */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
 
-          {/* Error */}
-          {message && (
-            <p className="text-sm text-red-600">{message}</p>
-          )}
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
 
-          {/* Submit */}
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-indigo-500 disabled:opacity-50"
-            >
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
-          </div>
-        </form>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
 
-        {/* Footer */}
-        <p className="mt-10 text-center text-sm text-gray-500">
-          Not a member?{" "}
+              {/* Error */}
+              {message && (
+                <Alert variant="destructive">
+                  <AlertDescription>{message}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Submit */}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing in..." : "Sign in"}
+              </Button>
+
+              {/* Footer */}
+              <p className="pt-2 text-center text-sm text-muted-foreground">
+                Not a member?{" "}
+                <Link
+                  to="/register"
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  Create an account
+                </Link>
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Small back link (optional) */}
+        <div className="mt-6 text-center">
           <Link
-            to="/register"
-            className="font-semibold text-indigo-600 hover:text-indigo-500"
+            to="/"
+            className="text-xs text-muted-foreground underline-offset-4 hover:underline"
           >
-            Create an account
+            Back to home
           </Link>
-        </p>
+        </div>
       </div>
     </div>
-  );
+  )
 }
