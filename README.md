@@ -94,7 +94,6 @@ https://supabase.com/docs/guides/getting-started/quickstarts/reactjs
 - Secure access via Supabase RLS policies
 
 ---
-
 ## 6. Progress & Milestones
 
 ### Completed
@@ -102,17 +101,19 @@ https://supabase.com/docs/guides/getting-started/quickstarts/reactjs
 - [x] Initial project setup
 - [x] User authentication (sign up / login / logout) — 16/12/2025
 - [x] Forgot password & update password flow — 17/12/2025
+- [x] Reusable auth UI (Tailwind + shadcn/ui) — 18/12/2025
+- [x] Dashboard layout (header, search, pagination, responsive actions) — 19/12/2025
+- [x] Notes database + CRUD wired to Supabase — 19/12/2025
+- [x] Create note page — 19/12/2025
+- [x] Note view/edit page with view-first UX + confirm delete — 19/12/2025
 
 ### In Progress / Planned
 
-- [ ] Create a reusable authentication UI with Tailwind CSS
-- [ ] Build the dashboard layout
-- [ ] Implement Create / Edit / Delete notes
-- [ ] Notes list view (user-scoped)
-- [ ] Improve UX and error handling
-
----
+- [ ] Notes list UX polish (spacing, icons, empty states, alignment)
+- [ ] Improve UX + error handling (UpdatePassword wrapper, toasts, better messages)
+- [ ] Add user-scoped protections (RLS policies verification + edge cases)
+- [ ] Add rich editor (optional) / formatting (optional)
 
 ## 8. License
 
-This project is for learning purposes. So MIT baby ! 
+This project is for learning purposes. So MIT Licence baby ! 

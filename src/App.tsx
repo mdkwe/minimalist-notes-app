@@ -3,12 +3,14 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import "tailwindcss";
 
 import Home from './routes/Home';
-import Register from './routes/Register';
-import Login from './routes/Login';
+import Register from './routes/auth/Register';
+import Login from './routes/auth/Login';
 import Dashboard from './routes/Dashboard';
-import Wrapper from './routes/Wrapper';
-import ForgotPassword from './routes/ForgotPassword';
-import UpdatePassword from "./routes/UpdatePassword";
+import Wrapper from './routes/auth/Wrapper';
+import ForgotPassword from './routes/auth/ForgotPassword';
+import UpdatePassword from "./routes/auth/UpdatePassword";
+import CreateContent from './routes/notes/CreateContent';
+import Content from './routes/notes/Content';
 
 
 export default function App() {
@@ -36,6 +38,12 @@ export default function App() {
             <Dashboard />
           </Wrapper>
         } />
+
+        {/* create note */}
+        <Route path='/create' element={<CreateContent />} />
+
+        {/* note details */}
+        <Route path='/notes/:id' element={<Content />} />
 
       </Routes>
     </BrowserRouter>

@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { Link } from "react-router-dom"
-import { supabase } from "../lib/supabaseClient"
+import { Link, useNavigate } from "react-router-dom"
+import { supabase } from "../../lib/supabaseClient"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
@@ -8,28 +8,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-export default function Register() {
+export default function Login() {
+  const navigate = useNavigate()
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setError(null)
-    setSuccess(null)
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.")
-      return
-    }
-
+    setMessage(null)
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -37,36 +29,32 @@ export default function Register() {
     setLoading(false)
 
     if (error) {
-      setError(error.message)
+      setMessage(error.message)
       return
     }
 
-    // If email confirmation is enabled, user can be null
-    if (data.user) {
-      setSuccess("Registration successful! You can now login.")
-    } else {
-      setSuccess("Check your email for a confirmation link.")
+    if (!data.user) {
+      setMessage("Login failed. Please try again.")
+      return
     }
 
-    setEmail("")
-    setPassword("")
-    setConfirmPassword("")
+    navigate("/dashboard")
   }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto flex w-full max-w-md flex-col px-4 py-10 sm:px-6">
         <div className="mb-6 space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Sign up</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Login</h1>
           <p className="text-sm text-muted-foreground">
-            Create a new account to start saving your notes.
+            Enter your email below to login to your account.
           </p>
         </div>
 
         <Card className="shadow-sm">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-base">Create your account</CardTitle>
-            <CardDescription>Minimal setup, maximum clarity.</CardDescription>
+            <CardTitle className="text-base">Welcome back</CardTitle>
+            <CardDescription>Continue where you left off.</CardDescription>
           </CardHeader>
 
           <CardContent>
@@ -87,65 +75,54 @@ export default function Register() {
 
               {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
                 <Input
                   id="password"
                   type="password"
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Use at least 6 characters (recommended).
-                </p>
               </div>
 
-              {/* Confirm password */}
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </div>
-
-              {/* Alerts */}
-              {error && (
+              {/* Error */}
+              {message && (
                 <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {success && (
-                <Alert>
-                  <AlertDescription>{success}</AlertDescription>
+                  <AlertDescription>{message}</AlertDescription>
                 </Alert>
               )}
 
               {/* Submit */}
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Creating account..." : "Create account"}
+                {loading ? "Signing in..." : "Sign in"}
               </Button>
 
               {/* Footer */}
               <p className="pt-2 text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
+                Not a member?{" "}
                 <Link
-                  to="/login"
+                  to="/register"
                   className="font-medium text-foreground underline underline-offset-4"
                 >
-                  Login
+                  Create an account
                 </Link>
               </p>
             </form>
           </CardContent>
         </Card>
 
+        {/* Small back link (optional) */}
         <div className="mt-6 text-center">
           <Link
             to="/"
