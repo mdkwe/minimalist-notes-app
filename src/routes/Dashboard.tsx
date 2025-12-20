@@ -80,8 +80,9 @@ export default function Dashboard() {
     setConfirmLoading(true)
 
     try {
-      await deleteNote(confirmDeleteId)
+      await deleteNote(confirmDeleteId) // make sure your hook throws on error (patch below)
       toast.success("Note deleted")
+      setConfirmDeleteId(null)
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Failed to delete note"))
     } finally {
@@ -94,29 +95,32 @@ export default function Dashboard() {
       {/* Header */}
       <header className="border-b bg-background">
         <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-          {/* Row 1 */}
-          <div className="grid grid-cols-[1fr_auto] items-start gap-3">
-            <div className="min-w-0">
-              <h1 className="truncate text-3xl font-semibold tracking-tight sm:text-4xl">
-                Minimalist Notes
-              </h1>
+          {/* Title row with SignOut aligned to H1 line */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-3">
+                <h1 className="truncate text-3xl font-semibold tracking-tight sm:text-4xl">
+                  Minimalist Notes
+                </h1>
+
+                <Button
+                  variant="outline"
+                  onClick={signOut}
+                  className="h-10 shrink-0 items-center justify-center gap-2 px-3 sm:px-4"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Sign Out</span>
+                  <span className="sr-only">Sign Out</span>
+                </Button>
+              </div>
+
               <p className="mt-1 truncate text-sm text-muted-foreground">
                 Simple, private, fast.
               </p>
             </div>
-
-            <Button
-              variant="outline"
-              onClick={signOut}
-              className="h-10 shrink-0 items-center justify-center gap-2 px-3 sm:px-4"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Sign Out</span>
-              <span className="sr-only">Sign Out</span>
-            </Button>
           </div>
 
-          {/* Row 2 */}
+          {/* Search + New note */}
           <div className="mt-6 flex items-center gap-2">
             <div className="relative min-w-0 flex-1">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -140,11 +144,7 @@ export default function Dashboard() {
             </div>
 
             <Button asChild className="shrink-0">
-              <Link
-                to="/create"
-                aria-label="New note"
-                className="inline-flex items-center justify-center"
-              >
+              <Link to="/create" aria-label="New note" className="inline-flex items-center justify-center">
                 <span className="inline-flex h-10 w-10 items-center justify-center sm:hidden">
                   <Plus className="h-4 w-4" />
                 </span>
@@ -206,55 +206,58 @@ export default function Dashboard() {
         {!loading && notes.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {notes.map((n) => (
-              <Card key={n.id} className="shadow-sm">
+              <Card
+                key={n.id}
+                className="relative overflow-hidden rounded-xl shadow-sm transition hover:bg-muted/20 focus-within:ring-2 focus-within:ring-ring"
+              >
+                {/* Full-card click overlay */}
                 <Link
                   to={`/notes/${n.id}?mode=view`}
-                  className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <CardTitle className="truncate text-base">
-                          {n.title?.trim() || "Untitled"}
-                        </CardTitle>
-                      </div>
+                  aria-label={`Open note ${n.title?.trim() || "Untitled"}`}
+                  className="absolute inset-0"
+                />
 
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="shrink-0 text-destructive hover:bg-destructive/10"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          setConfirmDeleteId(n.id)
-                        }}
-                        aria-label="Delete note"
-                        disabled={deletingId === n.id}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                <CardHeader className="relative pb-2">
+                  <div className="flex items-start justify-between gap-3">
+                    {/* IMPORTANT: flex-1 prevents icon from being squeezed */}
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="line-clamp-2 text-base leading-snug">
+                        {n.title?.trim() || "Untitled"}
+                      </CardTitle>
                     </div>
 
-                    <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                      {(n.subtitle?.trim() || n.content?.trim() || "—").slice(0, 140)}
-                    </p>
-                  </CardHeader>
+                    {/* Delete (always visible) */}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="relative z-10 shrink-0 text-destructive hover:bg-destructive/10"
+                      onClick={() => setConfirmDeleteId(n.id)}
+                      aria-label="Delete note"
+                      disabled={deletingId === n.id}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
 
-                  <CardContent className="pt-0">
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {formatShortDate(n.updated_at)}
-                      </span>
-                      <span className="text-muted-foreground/60">•</span>
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {formatShortDate(n.created_at)}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Link>
+                  <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                    {(n.subtitle?.trim() || n.content?.trim() || "—").slice(0, 140)}
+                  </p>
+                </CardHeader>
+
+                <CardContent className="relative pt-0">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      {formatShortDate(n.updated_at)}
+                    </span>
+                    <span className="text-muted-foreground/60">•</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatShortDate(n.created_at)}
+                    </span>
+                  </div>
+                </CardContent>
               </Card>
             ))}
           </div>
@@ -296,7 +299,6 @@ export default function Dashboard() {
       <AlertDialog
         open={!!confirmDeleteId}
         onOpenChange={(open) => {
-          // prevent closing while request is running
           if (!open && !confirmLoading) setConfirmDeleteId(null)
         }}
       >
@@ -311,9 +313,7 @@ export default function Dashboard() {
           </AlertDialogHeader>
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={confirmLoading}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={confirmLoading}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} disabled={confirmLoading}>
               {confirmLoading ? "Deleting…" : "Delete"}
             </AlertDialogAction>
