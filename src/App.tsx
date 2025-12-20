@@ -1,50 +1,36 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import "tailwindcss";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 
-import Home from './routes/Home';
-import Register from './routes/auth/Register';
-import Login from './routes/auth/Login';
-import Dashboard from './routes/Dashboard';
-import Wrapper from './routes/auth/Wrapper';
-import ForgotPassword from './routes/auth/ForgotPassword';
-import UpdatePassword from "./routes/auth/UpdatePassword";
-import CreateContent from './routes/notes/CreateContent';
-import Content from './routes/notes/Content';
+import Home from "./routes/Home"
+import Register from "./routes/auth/Register"
+import Login from "./routes/auth/Login"
+import ForgotPassword from "./routes/auth/ForgotPassword"
+import UpdatePassword from "./routes/auth/UpdatePassword"
 
+import Dashboard from "./routes/Dashboard"
+import CreateContent from "./routes/notes/CreateContent"
+import Content from "./routes/notes/Content"
+import RequireAuth from "./routes/auth/RequireAuth"
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* home */}
+        {/* public */}
         <Route path="/" element={<Home />} />
-
-        {/* register */}
         <Route path="/register" element={<Register />} />
-
-        {/* login */}
         <Route path="/login" element={<Login />} />
-
-        {/* forgot password */}
         <Route path="/forgot-password" element={<ForgotPassword />} />
-
-        {/* update password */}
         <Route path="/update-password" element={<UpdatePassword />} />
 
-        {/* dashboard */}
-        <Route path="/dashboard" element={
-          <Wrapper>
-            <Dashboard />
-          </Wrapper>
-        } />
+        {/* protected */}
+        <Route element={<RequireAuth />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/create" element={<CreateContent />} />
+          <Route path="/notes/:id" element={<Content />} />
+        </Route>
 
-        {/* create note */}
-        <Route path='/create' element={<CreateContent />} />
-
-        {/* note details */}
-        <Route path='/notes/:id' element={<Content />} />
-
+        {/* fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )
