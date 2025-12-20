@@ -19,11 +19,22 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+import { toast } from "sonner"
 import { Plus, LogOut, Search, Trash2, Clock, Calendar, X } from "lucide-react"
 
 function formatShortDate(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
+  return d.toLocaleDateString(undefined, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+function getErrorMessage(err: unknown, fallback = "Something went wrong.") {
+  if (err instanceof Error) return err.message
+  if (typeof err === "string") return err
+  return fallback
 }
 
 export default function Dashboard() {
@@ -47,6 +58,7 @@ export default function Dashboard() {
   } = useNotes({ pageSize: 6 })
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [confirmLoading, setConfirmLoading] = useState(false)
 
   const noteToDelete = useMemo(() => {
     if (!confirmDeleteId) return null
@@ -55,8 +67,26 @@ export default function Dashboard() {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
-    if (!error) navigate("/login")
-    // keep it minimalist: errors already displayed via hook; signOut errors are rare
+    if (error) {
+      toast.error(error.message || "Failed to sign out")
+      return
+    }
+    toast.success("Signed out")
+    navigate("/login")
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteId) return
+    setConfirmLoading(true)
+
+    try {
+      await deleteNote(confirmDeleteId)
+      toast.success("Note deleted")
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete note"))
+    } finally {
+      setConfirmLoading(false)
+    }
   }
 
   return (
@@ -64,7 +94,7 @@ export default function Dashboard() {
       {/* Header */}
       <header className="border-b bg-background">
         <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-          {/* Row 1: Title + Sign out aligned on title line */}
+          {/* Row 1 */}
           <div className="grid grid-cols-[1fr_auto] items-start gap-3">
             <div className="min-w-0">
               <h1 className="truncate text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -86,7 +116,7 @@ export default function Dashboard() {
             </Button>
           </div>
 
-          {/* Row 2: Search + New note (same line always) */}
+          {/* Row 2 */}
           <div className="mt-6 flex items-center gap-2">
             <div className="relative min-w-0 flex-1">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -110,7 +140,11 @@ export default function Dashboard() {
             </div>
 
             <Button asChild className="shrink-0">
-              <Link to="/create" aria-label="New note" className="inline-flex items-center justify-center">
+              <Link
+                to="/create"
+                aria-label="New note"
+                className="inline-flex items-center justify-center"
+              >
                 <span className="inline-flex h-10 w-10 items-center justify-center sm:hidden">
                   <Plus className="h-4 w-4" />
                 </span>
@@ -173,7 +207,6 @@ export default function Dashboard() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {notes.map((n) => (
               <Card key={n.id} className="shadow-sm">
-                {/* whole card click -> view mode */}
                 <Link
                   to={`/notes/${n.id}?mode=view`}
                   className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -186,7 +219,6 @@ export default function Dashboard() {
                         </CardTitle>
                       </div>
 
-                      {/* Delete top-right */}
                       <Button
                         type="button"
                         variant="ghost"
@@ -264,7 +296,8 @@ export default function Dashboard() {
       <AlertDialog
         open={!!confirmDeleteId}
         onOpenChange={(open) => {
-          if (!open) setConfirmDeleteId(null)
+          // prevent closing while request is running
+          if (!open && !confirmLoading) setConfirmDeleteId(null)
         }}
       >
         <AlertDialogContent>
@@ -278,16 +311,11 @@ export default function Dashboard() {
           </AlertDialogHeader>
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={!!deletingId}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (!confirmDeleteId) return
-                deleteNote(confirmDeleteId)
-                setConfirmDeleteId(null)
-              }}
-              disabled={!!deletingId}
-            >
-              Delete
+            <AlertDialogCancel disabled={confirmLoading}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} disabled={confirmLoading}>
+              {confirmLoading ? "Deleting…" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

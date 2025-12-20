@@ -10,8 +10,12 @@ export type NoteListItem = {
   updated_at: string
 }
 
-type UseNotesArgs = {
-  pageSize?: number
+type UseNotesArgs = { pageSize?: number }
+
+function getErrorMessage(err: unknown, fallback = "Something went wrong.") {
+  if (err instanceof Error) return err.message
+  if (typeof err === "string") return err
+  return fallback
 }
 
 export function useNotes({ pageSize = 6 }: UseNotesArgs = {}) {
@@ -39,88 +43,89 @@ export function useNotes({ pageSize = 6 }: UseNotesArgs = {}) {
 
   const clearSearch = () => setSearch("")
 
-  // Reset to page 1 when search changes
   useEffect(() => setPage(1), [search])
 
   const fetchNotes = async () => {
     setLoading(true)
     setError(null)
 
-    let countQuery = supabase.from("notes").select("id", { count: "exact", head: true })
-    let dataQuery = supabase
-      .from("notes")
-      .select("id,title,subtitle,content,created_at,updated_at")
-      .order("updated_at", { ascending: false })
-      .range(from, to)
+    try {
+      let countQuery = supabase
+        .from("notes")
+        .select("id", { count: "exact", head: true })
 
-    const q = search.trim()
-    if (q) {
-      const filter = `%${q}%`
-      const or = `title.ilike.${filter},subtitle.ilike.${filter},content.ilike.${filter}`
-      countQuery = countQuery.or(or)
-      dataQuery = dataQuery.or(or)
-    }
+      let dataQuery = supabase
+        .from("notes")
+        .select("id,title,subtitle,content,created_at,updated_at")
+        .order("updated_at", { ascending: false })
+        .range(from, to)
 
-    const [{ count: c, error: countErr }, { data, error: dataErr }] = await Promise.all([
-      countQuery,
-      dataQuery,
-    ])
+      const q = search.trim()
+      if (q) {
+        const filter = `%${q}%`
+        const or = `title.ilike.${filter},subtitle.ilike.${filter},content.ilike.${filter}`
+        countQuery = countQuery.or(or)
+        dataQuery = dataQuery.or(or)
+      }
 
-    if (countErr || dataErr) {
-      setError((countErr || dataErr)?.message ?? "Failed to load notes.")
-      setNotes([])
-      setCount(0)
-    } else {
+      const [{ count: c, error: countErr }, { data, error: dataErr }] =
+        await Promise.all([countQuery, dataQuery])
+
+      if (countErr || dataErr) {
+        throw new Error((countErr || dataErr)?.message ?? "Failed to load notes.")
+      }
+
       setCount(c ?? 0)
       setNotes((data ?? []) as NoteListItem[])
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to load notes."))
+      setNotes([])
+      setCount(0)
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   useEffect(() => {
     fetchNotes()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search])
+  }, [page, search, from, to])
 
   const deleteNote = async (id: string) => {
     setError(null)
     setDeletingId(id)
 
-    // optimistic remove
     const prevNotes = notes
     const prevCount = count
+    const prevPage = page
 
     const nextNotes = prevNotes.filter((n) => n.id !== id)
+
     setNotes(nextNotes)
     setCount(Math.max(0, prevCount - 1))
 
-    const { error } = await supabase.from("notes").delete().eq("id", id)
+    try {
+      const { error } = await supabase.from("notes").delete().eq("id", id)
+      if (error) throw new Error(error.message)
 
-    setDeletingId(null)
-
-    if (error) {
-      // rollback
+      if (nextNotes.length === 0 && prevPage > 1) setPage(prevPage - 1)
+    } catch (err: unknown) {
       setNotes(prevNotes)
       setCount(prevCount)
-      setError(error.message)
-      return
+      const msg = getErrorMessage(err, "Failed to delete note.")
+      setError(msg)
+      throw new Error(msg)
+    } finally {
+      setDeletingId(null)
     }
-
-    // if the page became empty, go back one page
-    if (nextNotes.length === 0 && page > 1) setPage((p) => p - 1)
   }
 
   return {
-    // data
     notes,
     count,
-
-    // ui states
     loading,
     error,
 
-    // controls
     search,
     setSearch,
     clearSearch,
@@ -131,11 +136,9 @@ export function useNotes({ pageSize = 6 }: UseNotesArgs = {}) {
     totalPages,
     showingText,
 
-    // delete
     deletingId,
     deleteNote,
 
-    // misc
     refetch: fetchNotes,
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { supabase } from "../../lib/supabaseClient"
 
 import { Button } from "@/components/ui/button"
@@ -12,10 +12,30 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
+import { ArrowLeft } from "lucide-react"
+import { toast } from "sonner"
+
+function getErrorMessage(err: unknown, fallback = "Something went wrong.") {
+  if (err instanceof Error) return err.message
+  if (typeof err === "string") return err
+  return fallback
+}
 
 export default function CreateContent() {
   const navigate = useNavigate()
-
   const titleRef = useRef<HTMLInputElement | null>(null)
 
   const [title, setTitle] = useState("")
@@ -25,6 +45,8 @@ export default function CreateContent() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
+  const [leaveOpen, setLeaveOpen] = useState(false)
+
   const titleMax = 80
   const subtitleMax = 120
 
@@ -33,21 +55,29 @@ export default function CreateContent() {
   const trimmedContent = content.trim()
 
   const hasSomething = useMemo(() => {
-    return trimmedTitle.length > 0 || trimmedSubtitle.length > 0 || trimmedContent.length > 0
+    return (
+      trimmedTitle.length > 0 ||
+      trimmedSubtitle.length > 0 ||
+      trimmedContent.length > 0
+    )
   }, [trimmedTitle, trimmedSubtitle, trimmedContent])
 
-  // allow empty title (-> Untitled), but prevent fully empty note
   const isValid = hasSomething
 
-  // route guard + autofocus
+  // Route guard + autofocus
   useEffect(() => {
     let mounted = true
 
     ;(async () => {
       const { data } = await supabase.auth.getSession()
       if (!mounted) return
-      if (!data.session) navigate("/login")
-      // focus after auth check (more stable)
+
+      // if you already have RequireAuth, this is extra-safe but ok
+      if (!data.session) {
+        navigate("/login")
+        return
+      }
+
       requestAnimationFrame(() => titleRef.current?.focus())
     })()
 
@@ -56,7 +86,7 @@ export default function CreateContent() {
     }
   }, [navigate])
 
-  // warn user if leaving with unsaved input
+  // Warn if leaving browser tab with unsaved text
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!hasSomething || loading) return
@@ -67,10 +97,12 @@ export default function CreateContent() {
     return () => window.removeEventListener("beforeunload", onBeforeUnload)
   }, [hasSomething, loading])
 
-  const safeGoBack = () => {
-    if (!hasSomething || loading) return navigate("/dashboard")
-    const ok = window.confirm("You have unsaved changes. Leave anyway?")
-    if (ok) navigate("/dashboard")
+  const requestLeave = () => {
+    if (!hasSomething || loading) {
+      navigate("/dashboard")
+      return
+    }
+    setLeaveOpen(true)
   }
 
   const handleCreate = async () => {
@@ -85,7 +117,8 @@ export default function CreateContent() {
     setLoading(true)
 
     try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession()
       if (sessionError) throw sessionError
       const session = sessionData.session
 
@@ -102,13 +135,14 @@ export default function CreateContent() {
       }
 
       const { error } = await supabase.from("notes").insert(payload)
+      if (error) throw new Error(error.message)
 
-      if (error) throw error
-
-      // ✅ your rule: after create => back to list
+      toast.success("Note created")
       navigate("/dashboard")
-    } catch (err: any) {
-      setMessage(err?.message ?? "Failed to create note.")
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err, "Failed to create note.")
+      setMessage(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
@@ -130,17 +164,29 @@ export default function CreateContent() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background">
-        <div className="mx-auto flex w-full max-w-3xl items-start justify-between gap-3 px-4 py-4 sm:px-6">
-          <div className="min-w-0">
-            <h1 className="text-base font-semibold tracking-tight">Create note</h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Start simple. You can edit later.
-            </p>
-          </div>
+        <div className="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-2">
 
-          <div className="flex shrink-0 items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={safeGoBack}>
-              Back
+
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-semibold tracking-tight">
+                Create note
+              </h1>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                Start simple. You can edit later.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="-ml-2 h-8 gap-2 px-2"
+              onClick={requestLeave}
+              aria-label="Back to dashboard"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+              <span className="sr-only">Back</span>
             </Button>
           </div>
         </div>
@@ -162,7 +208,7 @@ export default function CreateContent() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="title">Title</Label>
                   <span className="text-xs text-muted-foreground">
-                    {trimmedTitle.length}/{titleMax}
+                    {title.length}/{titleMax}
                   </span>
                 </div>
                 <Input
@@ -179,13 +225,15 @@ export default function CreateContent() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="subtitle">Subtitle</Label>
                   <span className="text-xs text-muted-foreground">
-                    {trimmedSubtitle.length}/{subtitleMax}
+                    {subtitle.length}/{subtitleMax}
                   </span>
                 </div>
                 <Input
                   id="subtitle"
                   value={subtitle}
-                  onChange={(e) => setSubtitle(e.target.value.slice(0, subtitleMax))}
+                  onChange={(e) =>
+                    setSubtitle(e.target.value.slice(0, subtitleMax))
+                  }
                   placeholder="Short summary (optional)"
                 />
               </div>
@@ -195,7 +243,7 @@ export default function CreateContent() {
                 <div className="flex items-center justify-between">
                   <Label htmlFor="content">Content</Label>
                   <span className="text-xs text-muted-foreground">
-                    {trimmedContent.length} chars
+                    {content.length} chars
                   </span>
                 </div>
 
@@ -209,9 +257,9 @@ export default function CreateContent() {
               </div>
 
               {message && (
-                <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                  {message}
-                </p>
+                <Alert variant="destructive">
+                  <AlertDescription>{message}</AlertDescription>
+                </Alert>
               )}
 
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
@@ -222,7 +270,7 @@ export default function CreateContent() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={safeGoBack}
+                  onClick={requestLeave}
                   disabled={loading}
                 >
                   Cancel
@@ -230,13 +278,34 @@ export default function CreateContent() {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Tip: leave the title empty — it will be saved as “Untitled”.{" "}
-                <span className="hidden sm:inline">Shortcut: Cmd/Ctrl + Enter.</span>
+                Tip: leave the title empty — it will be saved as “Untitled”.
+                <span className="hidden sm:inline"> Shortcut: Cmd/Ctrl + Enter.</span>
               </p>
             </form>
           </CardContent>
         </Card>
       </main>
+
+      {/* Leave confirmation */}
+      <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave without saving?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. If you leave now, they’ll be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => navigate("/dashboard")}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

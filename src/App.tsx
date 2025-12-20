@@ -11,27 +11,34 @@ import CreateContent from "./routes/notes/CreateContent"
 import Content from "./routes/notes/Content"
 import RequireAuth from "./routes/auth/RequireAuth"
 
+import { Toaster } from "@/components/ui/sonner"
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* public */}
-        <Route path="/" element={<Home />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/update-password" element={<UpdatePassword />} />
+    <>
+      <BrowserRouter>
+        <Routes>
+          {/* public */}
+          <Route path="/" element={<Home />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
 
-        {/* protected */}
-        <Route element={<RequireAuth />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/create" element={<CreateContent />} />
-          <Route path="/notes/:id" element={<Content />} />
-        </Route>
+          {/* protected */}
+          <Route element={<RequireAuth />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/create" element={<CreateContent />} />
+            <Route path="/notes/:id" element={<Content />} />
+          </Route>
 
-        {/* fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          {/* fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+
+      {/* Sonner */}
+      <Toaster richColors position="top-right" />
+    </>
   )
 }
